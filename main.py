@@ -102,15 +102,38 @@ async def ssupoll(interaction: discord.Interaction, time: str, target: int):
     else:
         await interaction.response.send_message("Error: Could not find the session channel. Check your ID!", ephemeral=True)
 
-@bot.tree.command(name="start", description="Start the ERLC session")
+@bot.tree.command(name="ssustart", description="Start the ERLC session")
 async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
-    embed = discord.Embed(title="🟢 SESSION STARTED", description=f"The server is now **OPEN**.\nJoin Code: `{SERVER_JOIN_CODE}`", color=discord.Color.green())
+    
+    if not channel:
+        return await interaction.response.send_message("Error: Session channel not found.", ephemeral=True)
+
+    # Get the current time for the dynamic timestamp
+    current_timestamp = int(time.time())
+
+    # Create the specialized embed
+    embed = discord.Embed(
+        color=16533327,
+        title="Server Start Up",
+        description=(
+            "Our ingame server is now open. Members can now join the in game server for many good roleplays. "
+            "Ensure you have read all of our ingame regulations that can be found in "
+            "https://discord.com/channels/1336141468519239790/1337225457380098109.\n\n"
+            "**Server**: `Hillside Provincial Roleplay I Strict I Canada`\n"
+            "**Server Owner**: `xRectico`\n"
+            "**Join Code**: `HillsideRP`\n\n"
+            f"Session started: <t:{current_timestamp}:R>"
+        )
+    )
+    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png?ex=694a83fd&is=6949327d&hm=e1b895533edf161ba71d7aec82ad594053289ee91b6debab512e66798dd718a5&=&format=webp&quality=lossless")
+    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png?ex=694acc59&is=69497ad9&hm=35bd175de664960fd1a9b858fbdfb573d07b18fd1dc012308e5e5e86fdcba007&=&format=webp&quality=lossless")
+
     msg = await channel.send(embed=embed)
     save_msg_id(msg.id)
-    await interaction.response.send_message("Session started!", ephemeral=True)
+    await interaction.response.send_message(f"Session started in <#{SESSION_CHANNEL_ID}>!", ephemeral=True)
 
-@bot.tree.command(name="shutdown", description="End current session")
+@bot.tree.command(name="ssushutdown", description="End current session")
 async def ssushutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     
@@ -150,6 +173,7 @@ async def ssushutdown(interaction: discord.Interaction):
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
+
 
 
 
