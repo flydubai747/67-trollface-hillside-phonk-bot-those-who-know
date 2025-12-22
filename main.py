@@ -4,14 +4,15 @@ import time
 from discord import app_commands
 from discord.ext import commands
 import json
-import os
 
-# --- CONFIGURATION (FILL THESE IN) ---
+# --- CONFIGURATION ---
 SESSION_CHANNEL_ID = 1443909455866626240 
 WELCOME_CHANNEL_ID = 1443909455866626240
 STAFF_LOG_CHANNEL_ID = 1443909455866626240
 SERVER_JOIN_CODE = "HillsideRP"
-# -------------------------------------
+STAFF_ROLE_ID = 1452721845139673168  # Role allowed to use Cancel
+PING_ROLE_ID = 1452721845139673168   # Role to ping for SSU
+# ---------------------
 
 DATA_FILE = "session_data.json"
 
@@ -26,59 +27,61 @@ def load_msg_id():
     return None
 
 class SessionVoteView(discord.ui.View):
-    def __init__(self, time, target, staff_member):
+    def __init__(self, duration_mins, target, staff_member):
         super().__init__(timeout=None)
         self.voters = set()
-        self.time = time
+        self.duration_mins = duration_mins
         self.target = target
         self.staff_member = staff_member
         self.goal_reached = False
+        # Calculate the static end time when the view is created
+        self.end_timestamp = int(time.time() + (duration_mins * 60))
 
     def create_embed(self):
         count = len(self.voters)
-        # Calculate the end timestamp for the Discord dynamic time
-        end_timestamp = int(time.time() + (self.time * 60))
-        
         embed = discord.Embed(
             color=16533327,
             title="Server Start Up Poll",
             description=(
                 f"{self.staff_member.mention} has started an ssu poll. "
                 f"**{self.target}** votes are required to start up the server. "
-                f"Poll lasts **{self.time}** minutes.\n\n"
-                f"Poll ends: <t:{end_timestamp}:R>"
+                f"Poll lasts **{self.duration_mins}** minutes.\n\n"
+                f"Poll ends: <t:{self.end_timestamp}:R>"
             )
         )
         embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
         embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452718197714325565/image.png")
         
-        # Adding the progress bar as a field so it doesn't clutter the description
         progress = min(count / self.target, 1.0)
         bar = "🟩" * int(progress * 10) + "⬜" * (10 - int(progress * 10))
         embed.add_field(name="Current Progress", value=f"{bar} ({count}/{self.target})", inline=False)
-        
         return embed
 
-    @discord.ui.button(label="Attend", style=discord.ButtonStyle.blurple, emoji="✅")
+    @discord.ui.button(label="0 Vote", style=discord.ButtonStyle.blurple, emoji="✅")
     async def vote_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.voters:
             self.voters.remove(interaction.user.id)
         else:
             self.voters.add(interaction.user.id)
         
-        if len(self.voters) >= self.target and not self.goal_reached:
+        count = len(self.voters)
+        button.label = f"{count} Vote"
+        
+        if count >= self.target and not self.goal_reached:
             self.goal_reached = True
             log_chan = interaction.client.get_channel(STAFF_LOG_CHANNEL_ID)
-            if log_chan: await log_chan.send(f"🔔 {self.staff_member.mention}, goal reached for **{self.time}**!")
+            if log_chan: 
+                await log_chan.send(f"🔔 {self.staff_member.mention}, goal reached for the SSU poll!")
 
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="🗑️")
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id == self.staff_member.id or interaction.user.guild_permissions.manage_messages:
+        has_role = discord.utils.get(interaction.user.roles, id=STAFF_ROLE_ID)
+        if has_role or interaction.user.guild_permissions.administrator:
             await interaction.message.delete()
         else:
-            await interaction.response.send_message("Only staff can cancel this.", ephemeral=True)
+            await interaction.response.send_message("You do not have the required staff role to cancel this poll.", ephemeral=True)
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -88,7 +91,6 @@ class MyBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        # This bypasses the Server ID error and stops duplicates
         await self.tree.sync()
         print(f"Logged in as {self.user} - Global Sync Complete")
 
@@ -105,27 +107,21 @@ async def on_member_join(member):
 @bot.tree.command(name="ssupoll", description="Start an SSU interest check")
 async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: int):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
-    
     if not channel:
         return await interaction.response.send_message("Error: Session channel not found.", ephemeral=True)
 
-    # We pass 'minutes' into the view so it can calculate the timestamp
     view = SessionVoteView(minutes, votes_needed, interaction.user)
-    
-    await channel.send(embed=view.create_embed(), view=view)
-    await interaction.response.send_message(f"SSU Poll posted in <#{SESSION_CHANNEL_ID}>!", ephemeral=True)
+    # Pings the role and sends the embed
+    await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=view.create_embed(), view=view)
+    await interaction.response.send_message(f"SSU Poll posted!", ephemeral=True)
 
 @bot.tree.command(name="ssustart", description="Start the ERLC session")
 async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
-    
     if not channel:
         return await interaction.response.send_message("Error: Session channel not found.", ephemeral=True)
 
-    # Get the current time for the dynamic timestamp
     current_timestamp = int(time.time())
-
-    # Create the specialized embed
     embed = discord.Embed(
         color=16533327,
         title="Server Start Up",
@@ -139,30 +135,27 @@ async def ssustart(interaction: discord.Interaction):
             f"Session started: <t:{current_timestamp}:R>"
         )
     )
-    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png?ex=694a83fd&is=6949327d&hm=e1b895533edf161ba71d7aec82ad594053289ee91b6debab512e66798dd718a5&=&format=webp&quality=lossless")
-    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png?ex=694acc59&is=69497ad9&hm=35bd175de664960fd1a9b858fbdfb573d07b18fd1dc012308e5e5e86fdcba007&=&format=webp&quality=lossless")
+    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
+    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png")
 
-    msg = await channel.send(embed=embed)
+    # Pings the role and sends the start embed
+    msg = await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=embed)
     save_msg_id(msg.id)
-    await interaction.response.send_message(f"Session started in <#{SESSION_CHANNEL_ID}>!", ephemeral=True)
+    await interaction.response.send_message(f"Session started!", ephemeral=True)
 
 @bot.tree.command(name="ssushutdown", description="End current session")
 async def ssushutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
-    
-    # 1. Get the current time for the dynamic timestamp
     current_timestamp = int(time.time())
     
-    # 2. Try to delete the old "Session Started" message
     old_msg_id = load_msg_id()
     if old_msg_id:
         try:
             old_msg = await channel.fetch_message(old_msg_id)
             await old_msg.delete()
         except:
-            pass # Ignore if the message was already deleted manually
+            pass
             
-    # 3. Create the Shutdown Embed
     embed = discord.Embed(
         color=16533327,
         title="Server Shutdown",
@@ -172,25 +165,12 @@ async def ssushutdown(interaction: discord.Interaction):
             f"Last session ended: <t:{current_timestamp}:R>"
         )
     )
-    
-    # Add the images you provided
-    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png?ex=694a83fd&is=6949327d&hm=e1b895533edf161ba71d7aec82ad594053289ee91b6debab512e66798dd718a5&=&format=webp&quality=lossless")
-    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png?ex=694a9670&is=694944f0&hm=eae11ac227e909bd3511827daed62cc5abee5b9effb12fb0e566303ee057d13a&=&format=webp&quality=lossless")
+    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
+    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png")
 
-    # 4. Send the embed and clear the saved message ID
     await channel.send(embed=embed)
     save_msg_id(None)
-    
-    # 5. Confirm to the staff member that it worked
     await interaction.response.send_message("Session successfully ended!", ephemeral=True)
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
-
-
-
-
-
-
-
-
