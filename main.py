@@ -76,14 +76,9 @@ class MyBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        # 1. This tells Discord to DELETE the server-specific copies
-        guild = discord.Object(id=1443909455866626240)
-        self.tree.clear_commands(guild=guild)
-        await self.tree.sync(guild=guild)
-        
-        # 2. This ensures ONLY the global version exists
+        # This bypasses the Server ID error and stops duplicates
         await self.tree.sync()
-        print(f"Logged in as {self.user} - DUPLICATES REMOVED")
+        print(f"Logged in as {self.user} - Global Sync Complete")
 
 bot = MyBot()
 
@@ -150,6 +145,7 @@ async def shutdown(interaction: discord.Interaction):
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
+
 
 
 
