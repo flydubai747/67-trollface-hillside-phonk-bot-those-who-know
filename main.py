@@ -82,7 +82,7 @@ class MyBot(commands.Bot):
         
         self.tree.copy_global_to(guild=MY_GUILD)
         await self.tree.sync(guild=MY_GUILD)
-        print(f"Logged in as {self.user} and FORCE SYNCED to server {YOUR_SERVER_ID}")
+        print(f"Logged in as {self.user} and FORCE SYNCED commands")
 
 bot = MyBot()
 
@@ -149,3 +149,4 @@ async def shutdown(interaction: discord.Interaction):
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
+
