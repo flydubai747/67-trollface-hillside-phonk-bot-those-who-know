@@ -1,11 +1,12 @@
 import discord
+import os
+import time
 from discord import app_commands
 from discord.ext import commands
 import json
 import os
 
 # --- CONFIGURATION (FILL THESE IN) ---
-TOKEN = 'MTQ1MjM5MzAyMTcyNjUyMzQzMw.GMvE8U.MHun-IaSY9d433fm_ZtBhq9I-ssuEleFg4MljA'
 SESSION_CHANNEL_ID = 1443909455866626240 
 WELCOME_CHANNEL_ID = 1443909455866626240
 STAFF_LOG_CHANNEL_ID = 1443909455866626240
@@ -75,8 +76,13 @@ class MyBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        await self.tree.sync()
-        print(f"Logged in as {self.user} and synced commands.")
+        # This part forces the commands to sync to YOUR server instantly
+        # Replace YOUR_SERVER_ID with the actual ID of your Discord server
+        MY_GUILD = discord.Object(id=1211754202515111986) 
+        
+        self.tree.copy_global_to(guild=MY_GUILD)
+        await self.tree.sync(guild=MY_GUILD)
+        print(f"Logged in as {self.user} and FORCE SYNCED to server {YOUR_SERVER_ID}")
 
 bot = MyBot()
 
@@ -90,7 +96,7 @@ async def on_member_join(member):
 
 @bot.tree.command(name="poll", description="Start interest check")
 async def poll(interaction: discord.Interaction, time: str, target: int):
-    channel = bot.get_channel(SESSION_CHANNEL_ID)
+    channel = interaction.channel
     view = SessionVoteView(time, target, interaction.user)
     await channel.send(embed=view.create_embed(), view=view)
     await interaction.response.send_message("Poll posted!", ephemeral=True)
@@ -103,19 +109,43 @@ async def start(interaction: discord.Interaction):
     save_msg_id(msg.id)
     await interaction.response.send_message("Session started!", ephemeral=True)
 
-@bot.tree.command(name="end", description="End session and delete start message")
-async def end(interaction: discord.Interaction):
+@bot.tree.command(name="shutdown", description="End current session")
+async def shutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
+    
+    # 1. Get the current time for the dynamic timestamp
+    current_timestamp = int(time.time())
+    
+    # 2. Try to delete the old "Session Started" message
     old_msg_id = load_msg_id()
     if old_msg_id:
         try:
             old_msg = await channel.fetch_message(old_msg_id)
             await old_msg.delete()
-        except: pass
+        except:
+            pass # Ignore if the message was already deleted manually
             
-    embed = discord.Embed(title="🔴 SESSION ENDED", description="The server is now **CLOSED**.", color=discord.Color.red())
+    # 3. Create the Shutdown Embed
+    embed = discord.Embed(
+        color=16533327,
+        title="Server Shutdown",
+        description=(
+            "Our ingame server is now closed. Please refrain from joining the "
+            "ingame server as it is prohibited and you will be moderated.\n\n"
+            f"Last session ended: <t:{current_timestamp}:R>"
+        )
+    )
+    
+    # Add the images you provided
+    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png?ex=694a83fd&is=6949327d&hm=e1b895533edf161ba71d7aec82ad594053289ee91b6debab512e66798dd718a5&=&format=webp&quality=lossless")
+    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png?ex=694a9670&is=694944f0&hm=eae11ac227e909bd3511827daed62cc5abee5b9effb12fb0e566303ee057d13a&=&format=webp&quality=lossless")
+
+    # 4. Send the embed and clear the saved message ID
     await channel.send(embed=embed)
     save_msg_id(None)
-    await interaction.response.send_message("Session ended!", ephemeral=True)
+    
+    # 5. Confirm to the staff member that it worked
+    await interaction.response.send_message("Session successfully ended!", ephemeral=True)
 
-bot.run(TOKEN)
+token = os.getenv('DISCORD_TOKEN')
+bot.run(token)
