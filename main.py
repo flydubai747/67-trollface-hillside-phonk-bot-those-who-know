@@ -90,15 +90,20 @@ async def on_member_join(member):
         embed = discord.Embed(title="Welcome!", description=f"{member.mention} joined! Member **#{count}**", color=discord.Color.blue())
         await channel.send(embed=embed)
 
-@bot.tree.command(name="poll", description="Start interest check")
-async def poll(interaction: discord.Interaction, time: str, target: int):
-    channel = interaction.channel
-    view = SessionVoteView(time, target, interaction.user)
-    await channel.send(embed=view.create_embed(), view=view)
-    await interaction.response.send_message("Poll posted!", ephemeral=True)
+@bot.tree.command(name="ssupoll", description="Start interest check")
+async def ssupoll(interaction: discord.Interaction, time: str, target: int):
+    # This fetches the channel using the ID from your configuration at the top
+    channel = bot.get_channel(SESSION_CHANNEL_ID)
+    
+    if channel:
+        view = SessionVoteView(time, target, interaction.user)
+        await channel.send(embed=view.create_embed(), view=view)
+        await interaction.response.send_message(f"Poll posted in <#{SESSION_CHANNEL_ID}>!", ephemeral=True)
+    else:
+        await interaction.response.send_message("Error: Could not find the session channel. Check your ID!", ephemeral=True)
 
 @bot.tree.command(name="start", description="Start the ERLC session")
-async def start(interaction: discord.Interaction):
+async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     embed = discord.Embed(title="🟢 SESSION STARTED", description=f"The server is now **OPEN**.\nJoin Code: `{SERVER_JOIN_CODE}`", color=discord.Color.green())
     msg = await channel.send(embed=embed)
@@ -106,7 +111,7 @@ async def start(interaction: discord.Interaction):
     await interaction.response.send_message("Session started!", ephemeral=True)
 
 @bot.tree.command(name="shutdown", description="End current session")
-async def shutdown(interaction: discord.Interaction):
+async def ssushutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     
     # 1. Get the current time for the dynamic timestamp
@@ -145,6 +150,7 @@ async def shutdown(interaction: discord.Interaction):
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
+
 
 
 
