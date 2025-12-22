@@ -36,15 +36,27 @@ class SessionVoteView(discord.ui.View):
 
     def create_embed(self):
         count = len(self.voters)
-        voter_list = ", ".join([f"<@{uid}>" for uid in self.voters]) if self.voters else "No one yet!"
+        # Calculate the end timestamp for the Discord dynamic time
+        end_timestamp = int(time.time() + (self.time * 60))
+        
+        embed = discord.Embed(
+            color=16533327,
+            title="Server Start Up Poll",
+            description=(
+                f"{self.staff_member.mention} has started an ssu poll. "
+                f"**{self.target}** votes are required to start up the server. "
+                f"Poll lasts **{self.time}** minutes.\n\n"
+                f"Poll ends: <t:{end_timestamp}:R>"
+            )
+        )
+        embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
+        embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452718197714325565/image.png")
+        
+        # Adding the progress bar as a field so it doesn't clutter the description
         progress = min(count / self.target, 1.0)
         bar = "🟩" * int(progress * 10) + "⬜" * (10 - int(progress * 10))
-
-        embed = discord.Embed(title="🚔 ERLC Session Interest", color=discord.Color.gold())
-        embed.add_field(name="Time", value=self.time, inline=True)
-        embed.add_field(name="Goal", value=f"{count}/{self.target}", inline=True)
-        embed.add_field(name="Progress", value=bar, inline=False)
-        embed.add_field(name="Attendees", value=voter_list, inline=False)
+        embed.add_field(name="Current Progress", value=f"{bar} ({count}/{self.target})", inline=False)
+        
         return embed
 
     @discord.ui.button(label="Attend", style=discord.ButtonStyle.blurple, emoji="✅")
@@ -90,17 +102,18 @@ async def on_member_join(member):
         embed = discord.Embed(title="Welcome!", description=f"{member.mention} joined! Member **#{count}**", color=discord.Color.blue())
         await channel.send(embed=embed)
 
-@bot.tree.command(name="ssupoll", description="Start interest check")
-async def ssupoll(interaction: discord.Interaction, time: str, target: int):
-    # This fetches the channel using the ID from your configuration at the top
+@bot.tree.command(name="ssupoll", description="Start an SSU interest check")
+async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: int):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     
-    if channel:
-        view = SessionVoteView(time, target, interaction.user)
-        await channel.send(embed=view.create_embed(), view=view)
-        await interaction.response.send_message(f"Poll posted in <#{SESSION_CHANNEL_ID}>!", ephemeral=True)
-    else:
-        await interaction.response.send_message("Error: Could not find the session channel. Check your ID!", ephemeral=True)
+    if not channel:
+        return await interaction.response.send_message("Error: Session channel not found.", ephemeral=True)
+
+    # We pass 'minutes' into the view so it can calculate the timestamp
+    view = SessionVoteView(minutes, votes_needed, interaction.user)
+    
+    await channel.send(embed=view.create_embed(), view=view)
+    await interaction.response.send_message(f"SSU Poll posted in <#{SESSION_CHANNEL_ID}>!", ephemeral=True)
 
 @bot.tree.command(name="ssustart", description="Start the ERLC session")
 async def ssustart(interaction: discord.Interaction):
@@ -173,6 +186,7 @@ async def ssushutdown(interaction: discord.Interaction):
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
+
 
 
 
