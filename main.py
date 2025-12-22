@@ -76,13 +76,15 @@ class MyBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
 
     async def setup_hook(self):
-        # This clears the old "Server-specific" commands that are causing duplicates
-        self.tree.clear_commands(guild=discord.Object(id=1443909455866626240))
-        await self.tree.sync(guild=discord.Object(id=1443909455866626240))
+        # 1. This ONLY clears the duplicates on your server
+        guild_id = 1443909455866626240
+        self.tree.clear_commands(guild=discord.Object(id=guild_id))
+        await self.tree.sync(guild=discord.Object(id=guild_id))
         
-        # This registers the commands "Globally" so they work everywhere cleanly
+        # 2. This sets up the ONE clean version for the whole bot
         await self.tree.sync()
-        print(f"Logged in as {self.user} and cleaned up duplicates.")
+        
+        print(f"Logged in as {self.user} - Server commands cleared, Global synced."))
 
 bot = MyBot()
 
@@ -149,5 +151,6 @@ async def shutdown(interaction: discord.Interaction):
 
 token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
+
 
 
