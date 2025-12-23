@@ -4,8 +4,6 @@ import time
 from discord import app_commands
 from discord.ext import commands
 import json
-import aiohttp
-import io
 
 # --- CONFIGURATION ---
 SESSION_CHANNEL_ID = 1443909455866626240 
@@ -163,18 +161,9 @@ async def ssustart(interaction: discord.Interaction):
         aop_text = "**The current Area of Play is Northwind Falls 🌊 and Hillside Provincial Highway 402 🚗**"
         aop_url = "https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png"
 
-    # Send start-up message
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
-    
-    # Download and send image as a file to hide the URL text
-    async with aiohttp.ClientSession() as session:
-        async with session.get(aop_url) as resp:
-            if resp.status == 200:
-                data = io.BytesIO(await resp.read())
-                file = discord.File(data, filename="aop_map.png")
-                aop_msg = await channel.send(content=aop_text, file=file)
-                save_msg_id(aop_msg.id) 
-
+    aop_msg = await channel.send(content=f"{aop_text}\n{aop_url}")
+    save_msg_id(aop_msg.id) 
     await interaction.response.send_message("Session started!", ephemeral=True)
 
 @bot.tree.command(name="ssushutdown", description="End current session")
@@ -187,8 +176,15 @@ async def ssushutdown(interaction: discord.Interaction):
             elif "Area of Play" in message.content:
                 await message.delete()
                 
-    embed = discord.Embed(color=16533327, title="Server Shutdown", description=f"Server is closed.\n\nEnded: <t:{int(time.time())}:R>")
+    # RESTORED: Original Shutdown Embed
+    embed = discord.Embed(
+        color=16533327, 
+        title="Server Shutdown", 
+        description=f"Our ingame server is now closed. Members can no longer join for roleplay.\n\nEnded: <t:{int(time.time())}:R>"
+    )
+    embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png")
+    
     await channel.send(embed=embed)
     save_msg_id(None)
     await interaction.response.send_message("Session ended!", ephemeral=True)
