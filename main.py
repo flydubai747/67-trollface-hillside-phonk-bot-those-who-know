@@ -4,6 +4,8 @@ import time
 from discord import app_commands
 from discord.ext import commands
 import json
+import aiohttp
+import io
 
 # --- CONFIGURATION ---
 SESSION_CHANNEL_ID = 1443909455866626240 
@@ -154,18 +156,25 @@ async def ssustart(interaction: discord.Interaction):
     main_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
     main_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png")
 
-    # Suppression of link text using <URL>
     if winning_aop == "Hillside City":
         aop_text = "**The current Area of Play is Hillside City 🌆**"
-        aop_img = "<https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png>"
+        aop_url = "https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png"
     else:
         aop_text = "**The current Area of Play is Northwind Falls 🌊 and Hillside Provincial Highway 402 🚗**"
-        # Updated to the correct NF map URL
-        aop_img = "<https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png>"
+        aop_url = "https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png"
 
+    # Send start-up message
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
-    aop_msg = await channel.send(content=f"{aop_text}\n{aop_img}")
-    save_msg_id(aop_msg.id) 
+    
+    # Download and send image as a file to hide the URL text
+    async with aiohttp.ClientSession() as session:
+        async with session.get(aop_url) as resp:
+            if resp.status == 200:
+                data = io.BytesIO(await resp.read())
+                file = discord.File(data, filename="aop_map.png")
+                aop_msg = await channel.send(content=aop_text, file=file)
+                save_msg_id(aop_msg.id) 
+
     await interaction.response.send_message("Session started!", ephemeral=True)
 
 @bot.tree.command(name="ssushutdown", description="End current session")
