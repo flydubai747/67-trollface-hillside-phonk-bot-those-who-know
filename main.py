@@ -28,7 +28,6 @@ def load_msg_id():
     return None
 
 class JoinButtonView(discord.ui.View):
-    """View containing the Join Now link button for the Start message."""
     def __init__(self):
         super().__init__(timeout=None)
         self.add_item(discord.ui.Button(label="Join Now", url=JOIN_LINK, style=discord.ButtonStyle.link))
@@ -63,12 +62,12 @@ class SessionVoteView(discord.ui.View):
         embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452718197714325565/image.png")
         return embed
 
-    @discord.ui.button(label="0 Vote", style=discord.ButtonStyle.blurple, emoji="✅", row=0)
+    @discord.ui.button(label="(0) Vote", style=discord.ButtonStyle.blurple, emoji="✅", row=0)
     async def vote_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.voters: self.voters.remove(interaction.user.id)
         else: self.voters.add(interaction.user.id)
         count = len(self.voters)
-        button.label = f"{count} Vote"
+        button.label = f"({count}) Vote"
         if count >= self.target and not self.goal_notified:
             self.goal_notified = True
             log_chan = interaction.client.get_channel(STAFF_LOG_CHANNEL_ID)
@@ -130,6 +129,7 @@ async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     old_id = load_msg_id()
     winning_aop = "Hillside City"
+    
     if old_id:
         try:
             old_msg = await channel.fetch_message(old_id)
@@ -154,26 +154,16 @@ async def ssustart(interaction: discord.Interaction):
     main_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
     main_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png")
 
-    # AOP Embed Logic
+    # Announcement Text Logic (Standard Text with Images instead of Embeds)
     if winning_aop == "Hillside City":
-        aop_embed = discord.Embed(
-            color=16533327, title="Our Active Area of Play is Hillside City",
-            description="Authorized Teams:\n• Northwind Falls Regional Police Service\n• Hillside Provincial Police\n• Royal Canadian Mounted Police\n• Hillside Fire Department, West Station (Station One)"
-        )
-        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png")
+        aop_text = "# The current Area of Play is Hillside City 🌆"
+        aop_img = "https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png"
     else:
-        aop_embed = discord.Embed(
-            color=16533327, title="Our Active Area of Play is Northwind Falls & HPH402",
-            description="Authorized Teams:\n• Northwind Falls Regional Police Service\n• Hillside Provincial Police\n• Hillside Fire Department, East Station (Station Two)"
-        )
-        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png")
-    
-    aop_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
+        aop_text = "# The current Area of Play is Northwind Falls 🌊 and Hillside Provincial Highway 402 🚗"
+        aop_img = "https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png"
 
-    # Send Main Start message WITH the Join Now button
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
-    # Send AOP message underneath
-    aop_msg = await channel.send(embed=aop_embed)
+    aop_msg = await channel.send(content=f"{aop_text}\n{aop_img}")
     save_msg_id(aop_msg.id) 
     await interaction.response.send_message("Session started!", ephemeral=True)
 
@@ -181,10 +171,12 @@ async def ssustart(interaction: discord.Interaction):
 async def ssushutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     async for message in channel.history(limit=10):
-        if message.author == bot.user and message.embeds:
-            title = str(message.embeds[0].title)
-            if "Server Start Up" in title or "Area of Play" in title:
+        if message.author == bot.user:
+            if message.embeds and ("Server Start Up" in str(message.embeds[0].title)):
                 await message.delete()
+            elif "Area of Play" in message.content:
+                await message.delete()
+                
     embed = discord.Embed(color=16533327, title="Server Shutdown", description=f"Server is closed.\n\nEnded: <t:{int(time.time())}:R>")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png")
     await channel.send(embed=embed)
