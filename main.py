@@ -75,7 +75,7 @@ class SessionVoteView(discord.ui.View):
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
     # SWAPPED: NF & HPH402 is now first
-    @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="<:northwindfallslogo:1453054542014054553>", row=0)
+    @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="🌲", row=0)
     async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
@@ -86,7 +86,7 @@ class SessionVoteView(discord.ui.View):
                 item.label = f"({len(self.hc_votes)}) Hillside City"
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    @discord.ui.button(label="(0) Hillside City", style=discord.ButtonStyle.gray, emoji="<:hillsidecity:1453055474101391558>", row=0)
+    @discord.ui.button(label="(0) Hillside City", style=discord.ButtonStyle.gray, emoji="🌆", row=0)
     async def hc_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
@@ -167,3 +167,4 @@ async def ssustart(interaction: discord.Interaction):
     await interaction.response.send_message("Session started!", ephemeral=True)
 
 # Rest of the bot code remains exactly as provided...
+
