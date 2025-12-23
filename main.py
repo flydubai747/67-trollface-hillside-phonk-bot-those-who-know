@@ -156,9 +156,9 @@ async def ssustart(interaction: discord.Interaction):
 
     # AOP Logic using your specific formatting and custom emojis
     if winning_aop == "Hillside City":
-        aop_content = "## The area of play is currently [Hillside City <:hillsidecity:1453055474101391558>](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864)"
+        aop_content = "## The area of play ingame is [Hillside City :hillsidecity:](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864)"
     else:
-        aop_content = "## The area of play is currently [Northwind Falls <:northwindfallslogo:1453054542014054553> and Hillside Provincial Highway 402 <:hph402:1453054298505089224>](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864)"
+        aop_content = "## The area of play ingame is [Northwind Falls :northwindfallslogo: and Hillside Provincial Highway 402 :hph402:](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864)"
 
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
     aop_msg = await channel.send(content=aop_content)
@@ -178,7 +178,7 @@ async def ssushutdown(interaction: discord.Interaction):
     embed = discord.Embed(
         color=16533327, 
         title="Server Shutdown", 
-        description=f"Our ingame server is now closed. Members can no longer join for roleplay.\n\nEnded: <t:{int(time.time())}:R>"
+        description=f"Our ingame server is now closed. Please refrain from joining the ingame server as it is prohibited and you will be moderated.\n\nEnded: <t:{int(time.time())}:R>"
     )
     embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png")
@@ -188,3 +188,4 @@ async def ssushutdown(interaction: discord.Interaction):
     await interaction.response.send_message("Session ended!", ephemeral=True)
 
 bot.run(os.getenv('DISCORD_TOKEN'))
+
