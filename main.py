@@ -27,6 +27,17 @@ def load_msg_id():
             return json.load(f).get("last_msg_id")
     return None
 
+# Helper to remove previous AOP messages to prevent clutter
+async def cleanup_aop(channel):
+    async for message in channel.history(limit=5):
+        if message.author.id == bot.user.id and message.embeds:
+            desc = str(message.embeds[0].description).lower()
+            if "area of play" in desc:
+                try: 
+                    await message.delete()
+                except: 
+                    pass
+
 class JoinButtonView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -115,11 +126,63 @@ class MyBot(commands.Bot):
 
 bot = MyBot()
 
+# --- CUSTOM AOP COMMANDS ---
+
+@bot.tree.command(name="aopnfhphnrnp", description="Set AOP to NF, HPH 402, and NRNP")
+async def aopnfhphnrnp(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    channel = bot.get_channel(SESSION_CHANNEL_ID)
+    await cleanup_aop(channel)
+    
+    embed = discord.Embed(
+        color=16533327,
+        description="### The area of play is currently <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864), <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&) and <:nrnpwhitelogo:1453145709456130128> [Northwind Falls National Park](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&)",
+    )
+    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864")
+    
+    new_msg = await channel.send(embed=embed)
+    save_msg_id(new_msg.id)
+    await interaction.followup.send("AOP updated to NF, HPH 402, and NRNP.")
+
+@bot.tree.command(name="aopnf", description="Set AOP to Northwind Falls")
+async def aopnf(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    channel = bot.get_channel(SESSION_CHANNEL_ID)
+    await cleanup_aop(channel)
+    
+    embed = discord.Embed(
+        color=16533327,
+        description="### The area of play is currently <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555265581201/hillside_nf_aop_map.png?ex=694b80d2&is=694a2f52&hm=4ffc6038032097d66d2b773ed5f2f8e09334945c81791fdc51694865fabf51f8&=&format=webp&quality=lossless&width=1098&height=864)",
+    )
+    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555265581201/hillside_nf_aop_map.png?ex=694b80d2&is=694a2f52&hm=4ffc6038032097d66d2b773ed5f2f8e09334945c81791fdc51694865fabf51f8&=&format=webp&quality=lossless&width=1098&height=864")
+    
+    new_msg = await channel.send(embed=embed)
+    save_msg_id(new_msg.id)
+    await interaction.followup.send("AOP updated to Northwind Falls.")
+
+@bot.tree.command(name="aopmw", description="Set AOP to Mapwide")
+async def aopmw(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    channel = bot.get_channel(SESSION_CHANNEL_ID)
+    await cleanup_aop(channel)
+    
+    embed = discord.Embed(
+        color=16533327,
+        description="### The area of play is currently <:mapwidelogo:1453141704516567061> [Mapwide](https://media.discordapp.net/attachments/1322319257131946034/1446923554837889064/hillside_mapwide_aop_2.png?ex=694c2992&is=694ad812&hm=a835a244ced957f128d3f5a552bbd7b490fbd5f2c211b20dab7b16d09b39d8d1&=&format=webp&quality=lossless&width=1098&height=864)",
+    )
+    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923554837889064/hillside_mapwide_aop_2.png?ex=694c2992&is=694ad812&hm=a835a244ced957f128d3f5a552bbd7b490fbd5f2c211b20dab7b16d09b39d8d1&=&format=webp&quality=lossless&width=1098&height=864")
+    
+    new_msg = await channel.send(embed=embed)
+    save_msg_id(new_msg.id)
+    await interaction.followup.send("AOP updated to Mapwide.")
+
+# --- CORE SESSION COMMANDS ---
+
 @bot.tree.command(name="ssupoll", description="Start SSU & AOP Poll")
 async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: int):
+    await interaction.response.defer(ephemeral=True)
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     
-    # Cleanup last 5 messages to find and delete old Shutdown embeds
     async for message in channel.history(limit=5):
         if message.author == bot.user and message.embeds:
             if "Server Shutdown" in str(message.embeds[0].title):
@@ -129,10 +192,11 @@ async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: 
     view = SessionVoteView(minutes, votes_needed, interaction.user)
     msg = await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=view.create_embed(), view=view)
     save_msg_id(msg.id) 
-    await interaction.response.send_message("Poll posted!", ephemeral=True)
+    await interaction.followup.send("Poll posted!")
 
 @bot.tree.command(name="ssustart", description="Start session and post AOP winner")
 async def ssustart(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     old_id = load_msg_id()
     winning_aop = "NF & HPH402" 
@@ -178,10 +242,11 @@ async def ssustart(interaction: discord.Interaction):
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
     aop_msg = await channel.send(embed=aop_embed)
     save_msg_id(aop_msg.id) 
-    await interaction.response.send_message("Session started!", ephemeral=True)
+    await interaction.followup.send("Session started!")
 
 @bot.tree.command(name="ssushutdown", description="End current session")
 async def ssushutdown(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     async for message in channel.history(limit=10):
         if message.author == bot.user and message.embeds:
@@ -197,6 +262,6 @@ async def ssushutdown(interaction: discord.Interaction):
     
     await channel.send(embed=embed)
     save_msg_id(None)
-    await interaction.response.send_message("Session ended!", ephemeral=True)
+    await interaction.followup.send("Session ended!")
 
 bot.run(os.getenv('DISCORD_TOKEN'))
