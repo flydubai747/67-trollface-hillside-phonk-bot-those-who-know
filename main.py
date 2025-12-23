@@ -12,6 +12,7 @@ STAFF_LOG_CHANNEL_ID = 1443909455866626240
 SERVER_JOIN_CODE = "HillsideRP"
 STAFF_ROLE_ID = 1452721845139673168 
 PING_ROLE_ID = 1452721845139673168   
+JOIN_LINK = "http://www.policeroleplay.community/join?code=HillsideRP&placeld=2534724415"
 # ---------------------
 
 DATA_FILE = "session_data.json"
@@ -26,6 +27,12 @@ def load_msg_id():
             return json.load(f).get("last_msg_id")
     return None
 
+class JoinButtonView(discord.ui.View):
+    """View containing the Join Now link button for the Start message."""
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(discord.ui.Button(label="Join Now", url=JOIN_LINK, style=discord.ButtonStyle.link))
+
 class SessionVoteView(discord.ui.View):
     def __init__(self, duration_mins, target, staff_member):
         super().__init__(timeout=None)
@@ -35,6 +42,7 @@ class SessionVoteView(discord.ui.View):
         self.duration_mins = duration_mins
         self.target = target
         self.staff_member = staff_member
+        self.goal_notified = False
         self.end_timestamp = int(time.time() + (duration_mins * 60))
 
     def create_embed(self):
@@ -48,11 +56,9 @@ class SessionVoteView(discord.ui.View):
                 f"Poll ends: <t:{self.end_timestamp}:R>"
             )
         )
-        
         progress = min(count / self.target, 1.0)
         bar = "🟩" * int(progress * 10) + "⬜" * (10 - int(progress * 10))
         embed.add_field(name="Current Progress", value=f"{bar} ({count}/{self.target})", inline=False)
-        
         embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
         embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452718197714325565/image.png")
         return embed
@@ -61,7 +67,13 @@ class SessionVoteView(discord.ui.View):
     async def vote_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.voters: self.voters.remove(interaction.user.id)
         else: self.voters.add(interaction.user.id)
-        button.label = f"{len(self.voters)} Vote"
+        count = len(self.voters)
+        button.label = f"{count} Vote"
+        if count >= self.target and not self.goal_notified:
+            self.goal_notified = True
+            log_chan = interaction.client.get_channel(STAFF_LOG_CHANNEL_ID)
+            if log_chan:
+                await log_chan.send(f"🔔 {self.staff_member.mention}, the SSU poll has reached the goal of **{self.target}** votes!")
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
     @discord.ui.button(label="(0) Hillside City", style=discord.ButtonStyle.gray, emoji="🏙️", row=0)
@@ -69,13 +81,10 @@ class SessionVoteView(discord.ui.View):
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
         else: self.hc_votes.add(interaction.user.id)
-        
-        # Update labels for both AOP buttons
         button.label = f"({len(self.hc_votes)}) Hillside City"
         for item in self.children:
             if isinstance(item, discord.ui.Button) and "NF & HPH402" in str(item.label):
                 item.label = f"({len(self.nf_votes)}) NF & HPH402"
-        
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
     @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="🌲", row=0)
@@ -83,13 +92,10 @@ class SessionVoteView(discord.ui.View):
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
         else: self.nf_votes.add(interaction.user.id)
-        
-        # Update labels for both AOP buttons
         button.label = f"({len(self.nf_votes)}) NF & HPH402"
         for item in self.children:
             if isinstance(item, discord.ui.Button) and "Hillside City" in str(item.label):
                 item.label = f"({len(self.hc_votes)}) Hillside City"
-                
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="🗑️", row=1)
@@ -123,25 +129,20 @@ async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: 
 async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     old_id = load_msg_id()
-    
-    winning_aop = "Hillside City" # Default
+    winning_aop = "Hillside City"
     if old_id:
         try:
             old_msg = await channel.fetch_message(old_id)
-            # Find the AOP buttons to count votes
-            hc_count = 0
-            nf_count = 0
+            hc_count, nf_count = 0, 0
             for item in old_msg.components[0].children:
                 if "Hillside City" in item.label:
                     hc_count = int(item.label.split("(")[1].split(")")[0])
                 if "NF & HPH402" in item.label:
                     nf_count = int(item.label.split("(")[1].split(")")[0])
-            
             if nf_count > hc_count: winning_aop = "NF & HPH402"
             await old_msg.delete()
         except: pass
 
-    # Main Start Embed
     current_ts = int(time.time())
     main_embed = discord.Embed(
         color=16533327, title="Server Start Up",
@@ -169,7 +170,9 @@ async def ssustart(interaction: discord.Interaction):
     
     aop_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
 
-    await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed)
+    # Send Main Start message WITH the Join Now button
+    await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
+    # Send AOP message underneath
     aop_msg = await channel.send(embed=aop_embed)
     save_msg_id(aop_msg.id) 
     await interaction.response.send_message("Session started!", ephemeral=True)
@@ -182,8 +185,7 @@ async def ssushutdown(interaction: discord.Interaction):
             title = str(message.embeds[0].title)
             if "Server Start Up" in title or "Area of Play" in title:
                 await message.delete()
-            
-    embed = discord.Embed(color=16533327, title="Server Shutdown", description=f"Server is now closed.\n\nEnded: <t:{int(time.time())}:R>")
+    embed = discord.Embed(color=16533327, title="Server Shutdown", description=f"Server is closed.\n\nEnded: <t:{int(time.time())}:R>")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png")
     await channel.send(embed=embed)
     save_msg_id(None)
