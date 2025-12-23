@@ -169,7 +169,7 @@ async def ssustart(interaction: discord.Interaction):
             color=16533327,
             description="### The area of play ingame is <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864) and <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&)",
         )
-        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1453080826366656643/hsrp_aop_test_resized.png?ex=694c2679&is=694ad4f9&hm=b0f3af37280679f9c2fc1cd932a8bb85a2b49c8e037b5c737f8b9298ef06505e&=&format=webp&quality=lossless")
+        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864")
 
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
     aop_msg = await channel.send(embed=aop_embed)
@@ -197,5 +197,6 @@ async def ssushutdown(interaction: discord.Interaction):
     await interaction.response.send_message("Session ended!", ephemeral=True)
 
 bot.run(os.getenv('DISCORD_TOKEN'))
+
 
 
