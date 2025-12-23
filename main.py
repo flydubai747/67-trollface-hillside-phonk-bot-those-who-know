@@ -48,8 +48,6 @@ class SessionVoteView(discord.ui.View):
                 f"Poll ends: <t:{self.end_timestamp}:R>"
             )
         )
-        # Adding voting results to the embed so /ssustart can read them
-        embed.add_field(name="AOP Votes", value=f"🏙️ Hillside City: **{len(self.hc_votes)}**\n🌲 NF & HPH402: **{len(self.nf_votes)}**", inline=False)
         
         progress = min(count / self.target, 1.0)
         bar = "🟩" * int(progress * 10) + "⬜" * (10 - int(progress * 10))
@@ -66,21 +64,35 @@ class SessionVoteView(discord.ui.View):
         button.label = f"{len(self.voters)} Vote"
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    @discord.ui.button(label="Hillside City", style=discord.ButtonStyle.gray, emoji="🏙️", row=1)
+    @discord.ui.button(label="(0) Hillside City", style=discord.ButtonStyle.gray, emoji="🏙️", row=0)
     async def hc_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
         else: self.hc_votes.add(interaction.user.id)
+        
+        # Update labels for both AOP buttons
+        button.label = f"({len(self.hc_votes)}) Hillside City"
+        for item in self.children:
+            if isinstance(item, discord.ui.Button) and "NF & HPH402" in str(item.label):
+                item.label = f"({len(self.nf_votes)}) NF & HPH402"
+        
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    @discord.ui.button(label="NF & HPH402", style=discord.ButtonStyle.gray, emoji="🌲", row=1)
+    @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="🌲", row=0)
     async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
         else: self.nf_votes.add(interaction.user.id)
+        
+        # Update labels for both AOP buttons
+        button.label = f"({len(self.nf_votes)}) NF & HPH402"
+        for item in self.children:
+            if isinstance(item, discord.ui.Button) and "Hillside City" in str(item.label):
+                item.label = f"({len(self.hc_votes)}) Hillside City"
+                
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="🗑️", row=2)
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="🗑️", row=1)
     async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         has_role = discord.utils.get(interaction.user.roles, id=STAFF_ROLE_ID)
         if has_role or interaction.user.guild_permissions.administrator:
@@ -104,7 +116,7 @@ async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: 
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     view = SessionVoteView(minutes, votes_needed, interaction.user)
     msg = await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=view.create_embed(), view=view)
-    save_msg_id(msg.id) # Save poll ID
+    save_msg_id(msg.id) 
     await interaction.response.send_message("Poll posted!", ephemeral=True)
 
 @bot.tree.command(name="ssustart", description="Start session and post AOP winner")
@@ -116,15 +128,20 @@ async def ssustart(interaction: discord.Interaction):
     if old_id:
         try:
             old_msg = await channel.fetch_message(old_id)
-            # Count logic from embed fields
-            embed = old_msg.embeds[0]
-            hc_votes = int(embed.fields[0].value.split("**")[1])
-            nf_votes = int(embed.fields[0].value.split("**")[3])
-            if nf_votes > hc_votes: winning_aop = "NF & HPH402"
+            # Find the AOP buttons to count votes
+            hc_count = 0
+            nf_count = 0
+            for item in old_msg.components[0].children:
+                if "Hillside City" in item.label:
+                    hc_count = int(item.label.split("(")[1].split(")")[0])
+                if "NF & HPH402" in item.label:
+                    nf_count = int(item.label.split("(")[1].split(")")[0])
+            
+            if nf_count > hc_count: winning_aop = "NF & HPH402"
             await old_msg.delete()
         except: pass
 
-    # 1. Main Session Start Embed
+    # Main Start Embed
     current_ts = int(time.time())
     main_embed = discord.Embed(
         color=16533327, title="Server Start Up",
@@ -136,7 +153,7 @@ async def ssustart(interaction: discord.Interaction):
     main_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
     main_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png")
 
-    # 2. AOP Specific Embed
+    # AOP Embed Logic
     if winning_aop == "Hillside City":
         aop_embed = discord.Embed(
             color=16533327, title="Our Active Area of Play is Hillside City",
@@ -154,21 +171,17 @@ async def ssustart(interaction: discord.Interaction):
 
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed)
     aop_msg = await channel.send(embed=aop_embed)
-    save_msg_id(aop_msg.id) # Save AOP msg for shutdown to delete
+    save_msg_id(aop_msg.id) 
     await interaction.response.send_message("Session started!", ephemeral=True)
 
 @bot.tree.command(name="ssushutdown", description="End current session")
 async def ssushutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
-    old_id = load_msg_id()
-    if old_id:
-        try:
-            # Shutdown now tries to delete BOTH the start and AOP message
-            # Since we only saved one ID, we fetch recent history to clean up
-            async for message in channel.history(limit=5):
-                if message.author == bot.user and ("Server Start Up" in str(message.embeds[0].title) or "Area of Play" in str(message.embeds[0].title)):
-                    await message.delete()
-        except: pass
+    async for message in channel.history(limit=10):
+        if message.author == bot.user and message.embeds:
+            title = str(message.embeds[0].title)
+            if "Server Start Up" in title or "Area of Play" in title:
+                await message.delete()
             
     embed = discord.Embed(color=16533327, title="Server Shutdown", description=f"Server is now closed.\n\nEnded: <t:{int(time.time())}:R>")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png")
