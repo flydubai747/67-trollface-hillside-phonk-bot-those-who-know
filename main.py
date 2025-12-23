@@ -12,35 +12,29 @@ STAFF_LOG_CHANNEL_ID = 1443909455866626240
 SERVER_JOIN_CODE = "HillsideRP"
 STAFF_ROLE_ID = 1452721845139673168 
 PING_ROLE_ID = 1452721845139673168   
-
-AOP_IMAGES = {
-    "Northwind Falls": "https://media.discordapp.net/attachments/1322319257131946034/1446923555265581201/hillside_nf_aop_map.png",
-    "Hillside City": "https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png"
-}
 # ---------------------
 
 DATA_FILE = "session_data.json"
 
-def save_data(msg_id, aop_votes=None):
+def save_msg_id(msg_id):
     with open(DATA_FILE, "w") as f:
-        json.dump({"last_msg_id": msg_id, "aop_votes": aop_votes or {}}, f)
+        json.dump({"last_msg_id": msg_id}, f)
 
-def load_data():
+def load_msg_id():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
-            return json.load(f)
-    return {"last_msg_id": None, "aop_votes": {}}
+            return json.load(f).get("last_msg_id")
+    return None
 
 class SessionVoteView(discord.ui.View):
     def __init__(self, duration_mins, target, staff_member):
         super().__init__(timeout=None)
         self.voters = set()
-        self.nf_votes = set()
         self.hc_votes = set()
+        self.nf_votes = set()
         self.duration_mins = duration_mins
         self.target = target
         self.staff_member = staff_member
-        self.goal_reached = False
         self.end_timestamp = int(time.time() + (duration_mins * 60))
 
     def create_embed(self):
@@ -54,11 +48,13 @@ class SessionVoteView(discord.ui.View):
                 f"Poll ends: <t:{self.end_timestamp}:R>"
             )
         )
-        embed.add_field(name="AOP Voting", value=f"🏔️ NF: **{len(self.nf_votes)}**\n🏙️ HC: **{len(self.hc_votes)}**", inline=True)
+        # Adding voting results to the embed so /ssustart can read them
+        embed.add_field(name="AOP Votes", value=f"🏙️ Hillside City: **{len(self.hc_votes)}**\n🌲 NF & HPH402: **{len(self.nf_votes)}**", inline=False)
         
         progress = min(count / self.target, 1.0)
         bar = "🟩" * int(progress * 10) + "⬜" * (10 - int(progress * 10))
-        embed.add_field(name="Progress", value=f"{bar} ({count}/{self.target})", inline=False)
+        embed.add_field(name="Current Progress", value=f"{bar} ({count}/{self.target})", inline=False)
+        
         embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
         embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452718197714325565/image.png")
         return embed
@@ -70,18 +66,18 @@ class SessionVoteView(discord.ui.View):
         button.label = f"{len(self.voters)} Vote"
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    @discord.ui.button(label="Northwind Falls", style=discord.ButtonStyle.gray, emoji="🏔️", row=1)
-    async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
-        if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
-        else: self.nf_votes.add(interaction.user.id)
-        await interaction.response.edit_message(embed=self.create_embed(), view=self)
-
     @discord.ui.button(label="Hillside City", style=discord.ButtonStyle.gray, emoji="🏙️", row=1)
     async def hc_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
         else: self.hc_votes.add(interaction.user.id)
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
+
+    @discord.ui.button(label="NF & HPH402", style=discord.ButtonStyle.gray, emoji="🌲", row=1)
+    async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
+        if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
+        else: self.nf_votes.add(interaction.user.id)
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="🗑️", row=2)
@@ -90,7 +86,7 @@ class SessionVoteView(discord.ui.View):
         if has_role or interaction.user.guild_permissions.administrator:
             await interaction.message.delete()
         else:
-            await interaction.response.send_message("Missing Staff Role.", ephemeral=True)
+            await interaction.response.send_message("Missing Permissions.", ephemeral=True)
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -107,55 +103,77 @@ bot = MyBot()
 async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: int):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     view = SessionVoteView(minutes, votes_needed, interaction.user)
-    poll_msg = await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=view.create_embed(), view=view)
-    save_data(poll_msg.id) # Temporarily save poll ID to delete it later
+    msg = await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=view.create_embed(), view=view)
+    save_msg_id(msg.id) # Save poll ID
     await interaction.response.send_message("Poll posted!", ephemeral=True)
 
-@bot.tree.command(name="ssustart", description="Post SSU and determine AOP winner")
+@bot.tree.command(name="ssustart", description="Start session and post AOP winner")
 async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
-    data = load_data()
+    old_id = load_msg_id()
     
-    # 1. Try to find and delete the poll
-    winning_aop = "Northwind Falls" # Default
-    if data["last_msg_id"]:
+    winning_aop = "Hillside City" # Default
+    if old_id:
         try:
-            poll_msg = await channel.fetch_message(data["last_msg_id"])
-            # Count votes from the embed fields
-            embed = poll_msg.embeds[0]
-            nf_count = int(embed.fields[0].value.split("**")[1])
-            hc_count = int(embed.fields[0].value.split("**")[3])
-            if hc_count > nf_count: winning_aop = "Hillside City"
-            await poll_msg.delete()
+            old_msg = await channel.fetch_message(old_id)
+            # Count logic from embed fields
+            embed = old_msg.embeds[0]
+            hc_votes = int(embed.fields[0].value.split("**")[1])
+            nf_votes = int(embed.fields[0].value.split("**")[3])
+            if nf_votes > hc_votes: winning_aop = "NF & HPH402"
+            await old_msg.delete()
         except: pass
 
-    # 2. Post Start Embed
+    # 1. Main Session Start Embed
     current_ts = int(time.time())
-    start_embed = discord.Embed(
+    main_embed = discord.Embed(
         color=16533327, title="Server Start Up",
-        description=f"Server is now **OPEN**.\n**AOP**: `{winning_aop}`\n**Join Code**: `{SERVER_JOIN_CODE}`\n\nStarted: <t:{current_ts}:R>"
+        description=(f"Our ingame server is now open. Members can now join for roleplay.\n\n"
+                     f"**Server**: `Hillside Provincial Roleplay I Strict I Canada`\n"
+                     f"**Join Code**: `{SERVER_JOIN_CODE}`\n\n"
+                     f"Session started: <t:{current_ts}:R>")
     )
-    start_embed.set_image(url=AOP_IMAGES[winning_aop])
+    main_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
+    main_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png")
+
+    # 2. AOP Specific Embed
+    if winning_aop == "Hillside City":
+        aop_embed = discord.Embed(
+            color=16533327, title="Our Active Area of Play is Hillside City",
+            description="Authorized Teams:\n• Northwind Falls Regional Police Service\n• Hillside Provincial Police\n• Royal Canadian Mounted Police\n• Hillside Fire Department, West Station (Station One)"
+        )
+        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png")
+    else:
+        aop_embed = discord.Embed(
+            color=16533327, title="Our Active Area of Play is Northwind Falls & HPH402",
+            description="Authorized Teams:\n• Northwind Falls Regional Police Service\n• Hillside Provincial Police\n• Hillside Fire Department, East Station (Station Two)"
+        )
+        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png")
     
-    msg = await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=start_embed)
-    save_data(msg.id) # Save the start msg ID so shutdown can delete it
+    aop_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
+
+    await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed)
+    aop_msg = await channel.send(embed=aop_embed)
+    save_msg_id(aop_msg.id) # Save AOP msg for shutdown to delete
     await interaction.response.send_message("Session started!", ephemeral=True)
 
 @bot.tree.command(name="ssushutdown", description="End current session")
 async def ssushutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
-    data = load_data()
-    if data["last_msg_id"]:
+    old_id = load_msg_id()
+    if old_id:
         try:
-            old_msg = await channel.fetch_message(data["last_msg_id"])
-            await old_msg.delete()
+            # Shutdown now tries to delete BOTH the start and AOP message
+            # Since we only saved one ID, we fetch recent history to clean up
+            async for message in channel.history(limit=5):
+                if message.author == bot.user and ("Server Start Up" in str(message.embeds[0].title) or "Area of Play" in str(message.embeds[0].title)):
+                    await message.delete()
         except: pass
             
-    embed = discord.Embed(color=16533327, title="Server Shutdown", 
-                         description=f"Server is closed.\n\nEnded: <t:{int(time.time())}:R>")
+    embed = discord.Embed(color=16533327, title="Server Shutdown", description=f"Server is now closed.\n\nEnded: <t:{int(time.time())}:R>")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452651288012656673/image.png")
     await channel.send(embed=embed)
-    save_data(None)
+    save_msg_id(None)
     await interaction.response.send_message("Session ended!", ephemeral=True)
 
 bot.run(os.getenv('DISCORD_TOKEN'))
