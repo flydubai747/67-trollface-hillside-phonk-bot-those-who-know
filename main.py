@@ -50,7 +50,7 @@ class SessionVoteView(discord.ui.View):
             color=16533327,
             title="Server Start Up Poll",
             description=(
-                f"{self.staff_member.mention} has started an ssu poll."
+                f"{self.staff_member.mention} has started an ssu poll. "
                 f"**{self.target}** votes are required to start up the server. Poll lasts **{self.duration_mins}** minutes.\n\n"
                 f"Poll ends: <t:{self.end_timestamp}:R>"
             )
@@ -74,7 +74,7 @@ class SessionVoteView(discord.ui.View):
                 await log_chan.send(f"🔔 {self.staff_member.mention}, the SSU poll has reached the goal of **{self.target}** votes!")
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    # --- NF & HPH402 is now first ---
+    # --- NF & HPH402 Button FIRST ---
     @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="🌲", row=0)
     async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
@@ -86,7 +86,7 @@ class SessionVoteView(discord.ui.View):
                 item.label = f"({len(self.hc_votes)}) Hillside City"
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    # --- Hillside City is now second ---
+    # --- Hillside City Button SECOND ---
     @discord.ui.button(label="(0) Hillside City", style=discord.ButtonStyle.gray, emoji="🏙️", row=0)
     async def hc_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
@@ -130,7 +130,7 @@ async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     old_id = load_msg_id()
     
-    # --- TIE LOGIC: Defaults to NF ---
+    # Tie logic: defaults to NF
     winning_aop = "NF & HPH402"
     
     if old_id:
@@ -143,18 +143,15 @@ async def ssustart(interaction: discord.Interaction):
                 if "NF & HPH402" in item.label:
                     nf_count = int(item.label.split("(")[1].split(")")[0])
             
-            # Only switch to HC if it strictly has more votes
             if hc_count > nf_count: 
                 winning_aop = "Hillside City"
             else:
                 winning_aop = "NF & HPH402"
-                
             await old_msg.delete()
         except: pass
 
     current_ts = int(time.time())
     
-    # --- RESTORED: Original Embed Description ---
     main_embed = discord.Embed(
         color=16533327, title="Server Start Up",
         description=(f"Our ingame server is now open. Members can now join the in game server for many good roleplays. Ensure you have read all of our ingame regulations that can be found in ⁠https://discord.com/channels/1336141468519239790/1337225457380098109.\n\n"
@@ -165,13 +162,22 @@ async def ssustart(interaction: discord.Interaction):
     main_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
     main_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png")
 
+    # Final AOP Embed Logic
     if winning_aop == "Hillside City":
-        aop_content = "## The area of play is currently <:hillsidecity:1453055474101391558> [Hillside City](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864)"
+        aop_embed = discord.Embed(
+            color=16533327,
+            description="## The area of play is currently <:hillsidecity:1453055474101391558> [Hillside City](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864)"
+        )
+        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864")
     else:
-        aop_content = "## The area of play is currently <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864) and <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&)"
+        aop_embed = discord.Embed(
+            color=16533327,
+            description="## The area of play is currently <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864) and <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&)"
+        )
+        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864")
 
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
-    aop_msg = await channel.send(content=aop_content)
+    aop_msg = await channel.send(embed=aop_embed)
     save_msg_id(aop_msg.id) 
     await interaction.response.send_message("Session started!", ephemeral=True)
 
@@ -180,12 +186,10 @@ async def ssushutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     async for message in channel.history(limit=10):
         if message.author == bot.user:
-            if message.embeds and ("Server Start Up" in str(message.embeds[0].title)):
-                await message.delete()
-            elif "area of play" in message.content.lower():
-                await message.delete()
+            if message.embeds:
+                if "Server Start Up" in str(message.embeds[0].title) or "area of play" in str(message.embeds[0].description).lower():
+                    await message.delete()
                 
-    # --- RESTORED: Original Embed Description ---
     embed = discord.Embed(
         color=16533327, 
         title="Server Shutdown", 
@@ -199,6 +203,3 @@ async def ssushutdown(interaction: discord.Interaction):
     await interaction.response.send_message("Session ended!", ephemeral=True)
 
 bot.run(os.getenv('DISCORD_TOKEN'))
-
-
-
