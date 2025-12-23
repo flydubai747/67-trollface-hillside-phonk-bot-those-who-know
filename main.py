@@ -136,7 +136,7 @@ async def aopnfhphnrnp(interaction: discord.Interaction):
         color=16533327,
         description="### The area of play is currently <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864), <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&) and <:nrnpwhitelogo:1453145709456130128> [Northwind Falls National Park](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&)",
     )
-    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864")
+    embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923554317926521/hillside_nf_hph402_nrnp_aop_map.png?ex=694c2991&is=694ad811&hm=02c2c747f8769cb26ff5f18bc4877bbb1b7708ac4ef4c0c55c8a20f90fe5291f&=&format=webp&quality=lossless&width=1098&height=864")
     
     await channel.send(embed=embed)
     await interaction.response.send_message("AOP Updated!", ephemeral=True)
@@ -254,4 +254,4 @@ async def ssushutdown(interaction: discord.Interaction):
     save_msg_id(None)
     await interaction.response.send_message("Session ended!", ephemeral=True)
 
-bot.run(os.getenv('DISCORD_TOKEN'))
+bot.run(os.getenv('DISCORD_TOKEN'))https://media.discordapp.net/attachments/1322319257131946034/1446923554317926521/hillside_nf_hph402_nrnp_aop_map.png?ex=694c2991&is=694ad811&hm=02c2c747f8769cb26ff5f18bc4877bbb1b7708ac4ef4c0c55c8a20f90fe5291f&=&format=webp&quality=lossless&width=1098&height=864
