@@ -151,7 +151,7 @@ async def ssustart(interaction: discord.Interaction):
         color=16533327, title="Server Start Up",
         description=(f"Our ingame server is now open, ensure you follow all rules found in https://discord.com/channels/1336141468519239790/1337225457380098109.\n\n"
                      f"**Server**: `Hillside Provincial Roleplay I Strict I Canada`\n"
-                     f"**Owner**: <@1131154561021706240>\n"
+                     f"**Owner**: `xRectico`\n"
                      f"**Join Code**: `{SERVER_JOIN_CODE}`\n\n"
                      f"Session started: <t:{int(time.time())}:R>")
     )
@@ -161,15 +161,15 @@ async def ssustart(interaction: discord.Interaction):
     if winning_aop == "Hillside City":
         aop_embed = discord.Embed(
             color=16533327,
-            description="## The area of play ingame is <:hillsidecity:1453055474101391558> [Hillside City](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864)",
+            description="### The area of play ingame is <:hillsidecity:1453055474101391558> [Hillside City](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864)",
         )
         aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864")
     else:
         aop_embed = discord.Embed(
             color=16533327,
-            description="## The area of play ingame is <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864) and <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&)",
+            description="### The area of play ingame is <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864) and <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png?ex=694c1841&is=694ac6c1&hm=5e2fd52558b8822912de72298a83af1397be658145419bec133d20e00a93e41c&)",
         )
-        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864")
+        aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1453079692369461370/hsrp_aop_nf_hph402_resized.png?ex=694c256b&is=694ad3eb&hm=cd531f3a6c5fd271c1cf5f61668b91360855a143cbde8be2e0d930a416f06d1f&=&format=webp&quality=lossless")
 
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
     aop_msg = await channel.send(embed=aop_embed)
@@ -197,3 +197,4 @@ async def ssushutdown(interaction: discord.Interaction):
     await interaction.response.send_message("Session ended!", ephemeral=True)
 
 bot.run(os.getenv('DISCORD_TOKEN'))
+
