@@ -66,35 +66,22 @@ class SessionVoteView(discord.ui.View):
     async def vote_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.voters: self.voters.remove(interaction.user.id)
         else: self.voters.add(interaction.user.id)
-        button.label = f"({len(self.voters)}) Vote"
-        if len(self.voters) >= self.target and not self.goal_notified:
-            self.goal_notified = True
-            log_chan = interaction.client.get_channel(STAFF_LOG_CHANNEL_ID)
-            if log_chan:
-                await log_chan.send(f"🔔 {self.staff_member.mention}, the SSU poll has reached the goal of **{self.target}** votes!")
+        count = len(self.voters)
+        button.label = f"({count}) Vote"
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    # SWAPPED: NF & HPH402 is now first
-    @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="🌲", row=0)
-    async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
-        if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
-        else: self.nf_votes.add(interaction.user.id)
-        button.label = f"({len(self.nf_votes)}) NF & HPH402"
-        for item in self.children:
-            if isinstance(item, discord.ui.Button) and "Hillside City" in str(item.label):
-                item.label = f"({len(self.hc_votes)}) Hillside City"
-        await interaction.response.edit_message(embed=self.create_embed(), view=self)
-
-    @discord.ui.button(label="(0) Hillside City", style=discord.ButtonStyle.gray, emoji="🌆", row=0)
+    @discord.ui.button(label="(0) Hillside City", style=discord.ButtonStyle.gray, emoji="🏙️", row=0)
     async def hc_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
         else: self.hc_votes.add(interaction.user.id)
         button.label = f"({len(self.hc_votes)}) Hillside City"
-        for item in self.children:
-            if isinstance(item, discord.ui.Button) and "NF & HPH402" in str(item.label):
-                item.label = f"({len(self.nf_votes)}) NF & HPH402"
+        await interaction.response.edit_message(embed=self.create_embed(), view=self)
+
+    @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="🌲", row=0)
+    async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
+        else: self.nf_votes.add(interaction.user.id)
+        button.label = f"({len(self.nf_votes)}) NF & HPH402"
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.danger, emoji="🗑️", row=1)
@@ -120,9 +107,7 @@ bot = MyBot()
 async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     old_id = load_msg_id()
-    
-    # Tie logic: default to NF & HPH402
-    winning_aop = "NF & HPH402"
+    winning_aop = "Hillside City"
     
     if old_id:
         try:
@@ -133,38 +118,35 @@ async def ssustart(interaction: discord.Interaction):
                     hc_count = int(item.label.split("(")[1].split(")")[0])
                 if "NF & HPH402" in item.label:
                     nf_count = int(item.label.split("(")[1].split(")")[0])
-            
-            # Winner logic: Only switch to HC if it strictly has more votes
-            if hc_count > nf_count: 
-                winning_aop = "Hillside City"
-            else:
-                winning_aop = "NF & HPH402"
-                
+            if nf_count > hc_count: winning_aop = "NF & HPH402"
             await old_msg.delete()
         except: pass
 
-    current_ts = int(time.time())
-    
-    # RESTORED: Original Start Up Embed Description
+    # --- MAIN STARTUP EMBED ---
     main_embed = discord.Embed(
         color=16533327, title="Server Start Up",
         description=(f"Our ingame server is now open. Members can now join for roleplay.\n\n"
                      f"**Server**: `Hillside Provincial Roleplay I Strict I Canada`\n"
                      f"**Join Code**: `{SERVER_JOIN_CODE}`\n\n"
-                     f"Session started: <t:{current_ts}:R>")
+                     f"Session started: <t:{int(time.time())}:R>")
     )
     main_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
     main_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png")
 
+    # --- AOP HYPERLINK EMBED ---
     if winning_aop == "Hillside City":
-        aop_content = "## The area of play ingame is [Hillside City <:hillsidecity:1453055474101391558>](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png?ex=694b80d1&is=694a2f51&hm=70b4dbe28a653322eb309b8108569e0de03ad3c8bf338a63b08dc18fb7816398&=&format=webp&quality=lossless&width=1098&height=864)"
+        desc = "## The area of play is currently [Hillside City <:hillsidecity:1453055474101391558>](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png)"
+        img_url = "https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png"
     else:
-        aop_content = "## The area of play ingame is [Northwind Falls <:northwindfallslogo:1453054542014054553> and Hillside Provincial Highway 402 <:hph402:1453054298505089224>](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png?ex=694b80d2&is=694a2f52&hm=f02922060f593fe6f33e5467b9d1af7f7dda30271e87cda18490206855cb7944&=&format=webp&quality=lossless&width=1098&height=864)"
+        desc = "## The area of play is currently [Northwind Falls <:northwindfallslogo:1453054542014054553> and Hillside Provincial Highway 402 <:hph402:1453054298505089224>](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png)"
+        img_url = "https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png"
+
+    aop_embed = discord.Embed(color=16533327, description=desc)
+    aop_embed.set_image(url=img_url)
 
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
-    aop_msg = await channel.send(content=aop_content)
+    aop_msg = await channel.send(embed=aop_embed)
     save_msg_id(aop_msg.id) 
     await interaction.response.send_message("Session started!", ephemeral=True)
 
-# Rest of the bot code remains exactly as provided...
-
+bot.run(os.getenv('DISCORD_TOKEN'))
