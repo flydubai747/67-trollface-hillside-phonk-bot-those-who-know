@@ -154,13 +154,14 @@ async def ssustart(interaction: discord.Interaction):
     main_embed.set_thumbnail(url="https://media.discordapp.net/attachments/1322319257131946034/1441759845081546843/0a931781c210724549c829d241b0dc28_1.png")
     main_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1452709174868971601/image.png")
 
-    # Announcement Text Logic (Standard Text with Images instead of Embeds)
+    # Suppression of link text using <URL>
     if winning_aop == "Hillside City":
-        aop_text = "# The current Area of Play is Hillside City 🌆"
-        aop_img = "https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png"
+        aop_text = "**The current Area of Play is Hillside City 🌆**"
+        aop_img = "<https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png>"
     else:
-        aop_text = "# The current Area of Play is Northwind Falls 🌊 and Hillside Provincial Highway 402 🚗"
-        aop_img = "https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png"
+        aop_text = "**The current Area of Play is Northwind Falls 🌊 and Hillside Provincial Highway 402 🚗**"
+        # Updated to the correct NF map URL
+        aop_img = "<https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png>"
 
     await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
     aop_msg = await channel.send(content=f"{aop_text}\n{aop_img}")
