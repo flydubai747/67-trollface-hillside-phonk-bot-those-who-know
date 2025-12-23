@@ -74,7 +74,6 @@ class SessionVoteView(discord.ui.View):
                 await log_chan.send(f"🔔 {self.staff_member.mention}, the SSU poll has reached the goal of **{self.target}** votes!")
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    # NF Button First with Custom Emoji
     @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="<:northwindfallslogo:1453054542014054553>", row=0)
     async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
@@ -86,7 +85,6 @@ class SessionVoteView(discord.ui.View):
                 item.label = f"({len(self.hc_votes)}) Hillside City"
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    # Hillside City Button Second with Custom Emoji
     @discord.ui.button(label="(0) Hillside City", style=discord.ButtonStyle.gray, emoji="<:hillsidecity:1453055474101391558>", row=0)
     async def hc_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
@@ -120,6 +118,14 @@ bot = MyBot()
 @bot.tree.command(name="ssupoll", description="Start SSU & AOP Poll")
 async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: int):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
+    
+    # NEW: Cleanup Shutdown messages before posting poll
+    async for message in channel.history(limit=20):
+        if message.author == bot.user and message.embeds:
+            if "Server Shutdown" in str(message.embeds[0].title):
+                try: await message.delete()
+                except: pass
+
     view = SessionVoteView(minutes, votes_needed, interaction.user)
     msg = await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=view.create_embed(), view=view)
     save_msg_id(msg.id) 
@@ -129,8 +135,7 @@ async def ssupoll(interaction: discord.Interaction, minutes: int, votes_needed: 
 async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     old_id = load_msg_id()
-    
-    winning_aop = "NF & HPH402" # Tie Default
+    winning_aop = "NF & HPH402" 
     
     if old_id:
         try:
@@ -141,7 +146,6 @@ async def ssustart(interaction: discord.Interaction):
                     hc_count = int(item.label.split("(")[1].split(")")[0])
                 if "NF & HPH402" in item.label:
                     nf_count = int(item.label.split("(")[1].split(")")[0])
-            
             if hc_count > nf_count: 
                 winning_aop = "Hillside City"
             await old_msg.delete()
@@ -180,10 +184,9 @@ async def ssustart(interaction: discord.Interaction):
 async def ssushutdown(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     async for message in channel.history(limit=10):
-        if message.author == bot.user:
-            if message.embeds:
-                if "Server Start Up" in str(message.embeds[0].title) or "area of play" in str(message.embeds[0].description).lower():
-                    await message.delete()
+        if message.author == bot.user and message.embeds:
+            if "Server Start Up" in str(message.embeds[0].title) or "area of play" in str(message.embeds[0].description).lower():
+                await message.delete()
                 
     embed = discord.Embed(
         color=16533327, title="Server Shutdown", 
@@ -197,6 +200,3 @@ async def ssushutdown(interaction: discord.Interaction):
     await interaction.response.send_message("Session ended!", ephemeral=True)
 
 bot.run(os.getenv('DISCORD_TOKEN'))
-
-
-
