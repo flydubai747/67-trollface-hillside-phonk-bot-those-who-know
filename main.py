@@ -4,6 +4,7 @@ import time
 from discord import app_commands
 from discord.ext import commands
 import json
+import re
 
 # --- CONFIGURATION ---
 SESSION_CHANNEL_ID = 1340042528937738291 
@@ -123,7 +124,7 @@ class MyBot(commands.Bot):
         self.add_view(JoinButtonView())
         @self.tree.error
         async def on_app_command_error(interaction, error):
-            if isinstance(error, app_commands.errors.MissingRole) or isinstance(error, app_commands.errors.MissingPermissions):
+            if isinstance(error, (app_commands.errors.MissingRole, app_commands.errors.MissingPermissions)):
                 await interaction.response.send_message("loser 🤣😂", ephemeral=True)
             else: raise error
         await self.tree.sync()
@@ -136,33 +137,58 @@ class MyBot(commands.Bot):
 
     async def on_message(self, message):
         if message.author == self.user: return
+        
+        # Check specific channel 1443909455866626240
         if message.channel.id == 1443909455866626240:
             content = message.content.strip()
             
+            # --- SAY COMMAND ---
+            # Format: say (Message) (Channel ID) OR say (Message) (Channel ID) (Reply Message ID)
             if content.lower().startswith("say "):
-                parts = content.split()
-                try:
-                    target_id = int(parts[-1])
-                    text_to_send = " ".join(parts[1:-1])
-                    target_channel = self.get_channel(target_id)
-                    if target_channel:
-                        await target_channel.send(text_to_send)
-                        await message.add_reaction("✅")
-                except: await message.add_reaction("❌")
-
-            elif content.lower().startswith("addrole "):
-                parts = content.split()
-                if len(parts) == 3:
+                matches = re.findall(r'\((.*?)\)', content)
+                if len(matches) >= 2:
                     try:
-                        user_id = int(parts[1])
-                        role_id = int(parts[2])
+                        text_to_send = matches[0]
+                        target_channel_id = int(matches[1])
+                        target_channel = self.get_channel(target_channel_id)
+                        
+                        if target_channel:
+                            # Check if a 3rd match exists for Reply ID
+                            if len(matches) >= 3:
+                                reply_id = int(matches[2])
+                                try:
+                                    # Fetch reference to reply
+                                    partial_msg = target_channel.get_partial_message(reply_id)
+                                    await target_channel.send(text_to_send, reference=partial_msg)
+                                    await message.add_reaction("✅")
+                                except:
+                                    await message.add_reaction("❌") # Likely invalid reply ID
+                            else:
+                                # Normal send
+                                await target_channel.send(text_to_send)
+                                await message.add_reaction("✅")
+                        else:
+                            await message.add_reaction("❌") # Invalid Channel
+                    except:
+                        await message.add_reaction("⚠️")
+
+            # --- ADDROLE COMMAND ---
+            elif content.lower().startswith("addrole "):
+                matches = re.findall(r'\((.*?)\)', content)
+                if len(matches) >= 2:
+                    try:
+                        user_id = int(matches[0])
+                        role_id = int(matches[1])
                         member = message.guild.get_member(user_id)
                         role = message.guild.get_role(role_id)
                         if member and role:
                             await member.add_roles(role)
                             await message.add_reaction("✅")
-                        else: await message.add_reaction("❌")
-                    except: await message.add_reaction("⚠️")
+                        else:
+                            await message.add_reaction("❌")
+                    except:
+                        await message.add_reaction("⚠️")
+
         await self.process_commands(message)
 
 bot = MyBot()
@@ -300,4 +326,3 @@ async def ssushutdown(interaction):
     await interaction.followup.send("Session ended!")
 
 bot.run(os.getenv('DISCORD_TOKEN'))
-
