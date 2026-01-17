@@ -6,12 +6,12 @@ from discord.ext import commands
 import json
 
 # --- CONFIGURATION ---
-SESSION_CHANNEL_ID = 1340042528937738291 
-WELCOME_CHANNEL_ID = 1336141468519239795
-STAFF_LOG_CHANNEL_ID = 1367122110077603920
+SESSION_CHANNEL_ID = 1443909455866626240 
+WELCOME_CHANNEL_ID = 1443909455866626240
+STAFF_LOG_CHANNEL_ID = 1443909455866626240
 SERVER_JOIN_CODE = "HillsideRP"
-STAFF_ROLE_ID = 1336148188561932319 
-PING_ROLE_ID = 1336144697202049145      
+STAFF_ROLE_ID = 1452721845139673168 
+PING_ROLE_ID = 1452721845139673168      
 JOIN_LINK = "http://www.policeroleplay.community/join?code=HillsideRP&placeld=2534724415"
 # ---------------------
 
@@ -88,7 +88,7 @@ class SessionVoteView(discord.ui.View):
                 await log_chan.send(f"🔔 {self.staff_member.mention}, the SSU poll has reached the goal of **{self.target}** votes!")
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
-    @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="<:northwindfallslogo:1453054542014054553>", row=0)
+    @discord.ui.button(label="(0) NF & HPH402", style=discord.ButtonStyle.gray, emoji="<:northwindfalls:1462090977291403409>", row=0)
     async def nf_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id in self.hc_votes: self.hc_votes.remove(interaction.user.id)
         if interaction.user.id in self.nf_votes: self.nf_votes.remove(interaction.user.id)
@@ -161,7 +161,7 @@ async def aopnfhphnrnp(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     await cleanup_aop(channel)
-    embed = discord.Embed(color=16533327, description="### The area of play is currently <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png), <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png) and <:nrnpwhitelogo:1453145709456130128> [Northwind Falls National Park](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png)")
+    embed = discord.Embed(color=16533327, description="### The area of play is currently <:northwindfalls:1462090977291403409> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png), <:hph402:1455577343132307476> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png) and <:nrnpwhitelogo:1462090807766028463> [Northwind Falls National Park](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png)")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png")
     await channel.send(embed=embed)
     await interaction.followup.send("AOP Updated!")
@@ -171,7 +171,7 @@ async def aopnfhph(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     await cleanup_aop(channel)
-    embed = discord.Embed(color=16533327, description="### The area of play is currently <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png) and <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png)")
+    embed = discord.Embed(color=16533327, description="### The area of play is currently <:northwindfalls:1462090977291403409> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png) and <:hph402:1455577343132307476> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png)")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png")
     await channel.send(embed=embed)
     await interaction.followup.send("AOP Updated!")
@@ -191,7 +191,7 @@ async def aopnf(interaction: discord.Interaction):
     await interaction.response.defer(ephemeral=True)
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     await cleanup_aop(channel)
-    embed = discord.Embed(color=16533327, description="### The area of play is currently <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555265581201/hillside_nf_aop_map.png)")
+    embed = discord.Embed(color=16533327, description="### The area of play is currently <:northwindfalls:1462090977291403409> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555265581201/hillside_nf_aop_map.png)")
     embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555265581201/hillside_nf_aop_map.png")
     await channel.send(embed=embed)
     await interaction.followup.send("AOP Updated!")
@@ -280,7 +280,7 @@ async def ssustart(interaction: discord.Interaction):
         aop_embed = discord.Embed(color=16533327, description="### The area of play ingame is <:hillsidecity:1453055474101391558> [Hillside City](https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png)")
         aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923553894170801/hillside_hillside_city_aop_map.png")
     else:
-        aop_embed = discord.Embed(color=16533327, description="### The area of play ingame is <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png) and <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png)")
+        aop_embed = discord.Embed(color=16533327, description="### The area of play ingame is <:northwindfalls:1462090977291403409> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png) and <:hph402:1455577343132307476> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png)")
         aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png")
 
     # This sends the main start message with the Role Ping
@@ -313,4 +313,5 @@ async def ssushutdown(interaction: discord.Interaction):
     await interaction.followup.send("Session ended!")
 
 bot.run(os.getenv('DISCORD_TOKEN'))
+
 
