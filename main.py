@@ -132,14 +132,8 @@ class MyBot(commands.Bot):
         channel = self.get_channel(WELCOME_CHANNEL_ID)
         if channel:
             count = len(member.guild.members)
-            embed = discord.Embed(
-                title="Welcome to Hillside Provincial Roleplay!",
-                description=f"Welcome {member.mention} to the server! You are member **#{count}**. Make sure to read the rules and enjoy your stay.",
-                color=16533327
-            )
-            embed.set_thumbnail(url=member.display_avatar.url)
-            embed.set_footer(text=f"Hillside RP | Member Count: {count}")
-            await channel.send(embed=embed)
+            # Send as a normal text message as requested
+            await channel.send(f"Welcome to the Province of Hillside, {member.mention}! You are member **#{count}**. Make sure to read the rules and enjoy your stay!")
 
     async def on_message(self, message):
         if message.author == self.user: return
