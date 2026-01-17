@@ -138,62 +138,69 @@ class MyBot(commands.Bot):
     async def on_message(self, message):
         if message.author == self.user: return
         
-        # Check specific channel 1443909455866626240
+        # Checking Management Channel for commands
         if message.channel.id == 1443909455866626240:
             content = message.content.strip()
             
             # --- SAY COMMAND ---
-            # Format: say (Message) (Channel ID) OR say (Message) (Channel ID) (Reply Message ID)
+            # Format: say (Text) (Channel ID) (Optional Reply ID)
+            # Support for pings like <@id> or <@&id> and attached images.
             if content.lower().startswith("say "):
                 matches = re.findall(r'\((.*?)\)', content)
                 if len(matches) >= 2:
                     try:
                         text_to_send = matches[0]
-                        target_channel_id = int(matches[1])
-                        target_channel = self.get_channel(target_channel_id)
+                        target_chan = self.get_channel(int(matches[1]))
                         
-                        if target_channel:
-                            # Check if a 3rd match exists for Reply ID
+                        if target_chan:
+                            # Prepare attachments if any
+                            files = [await a.to_file() for a in message.attachments]
+                            
+                            # Handle Reply if 3rd bracket exists
                             if len(matches) >= 3:
                                 reply_id = int(matches[2])
-                                try:
-                                    # Fetch reference to reply
-                                    partial_msg = target_channel.get_partial_message(reply_id)
-                                    await target_channel.send(text_to_send, reference=partial_msg)
-                                    await message.add_reaction("✅")
-                                except:
-                                    await message.add_reaction("❌") # Likely invalid reply ID
+                                partial = target_chan.get_partial_message(reply_id)
+                                await target_chan.send(text_to_send, reference=partial, files=files)
                             else:
-                                # Normal send
-                                await target_channel.send(text_to_send)
-                                await message.add_reaction("✅")
-                        else:
-                            await message.add_reaction("❌") # Invalid Channel
-                    except:
-                        await message.add_reaction("⚠️")
+                                await target_chan.send(text_to_send, files=files)
+                            
+                            await message.add_reaction("✅")
+                        else: await message.add_reaction("❌")
+                    except: await message.add_reaction("⚠️")
 
             # --- ADDROLE COMMAND ---
+            # Format: addrole (User ID) (Role ID)
             elif content.lower().startswith("addrole "):
                 matches = re.findall(r'\((.*?)\)', content)
                 if len(matches) >= 2:
                     try:
-                        user_id = int(matches[0])
-                        role_id = int(matches[1])
-                        member = message.guild.get_member(user_id)
-                        role = message.guild.get_role(role_id)
-                        if member and role:
-                            await member.add_roles(role)
+                        mem = message.guild.get_member(int(matches[0]))
+                        rol = message.guild.get_role(int(matches[1]))
+                        if mem and rol:
+                            await mem.add_roles(rol)
                             await message.add_reaction("✅")
-                        else:
-                            await message.add_reaction("❌")
-                    except:
-                        await message.add_reaction("⚠️")
+                        else: await message.add_reaction("❌")
+                    except: await message.add_reaction("⚠️")
+
+            # --- REMOVEROLE COMMAND ---
+            # Format: removerole (User ID) (Role ID)
+            elif content.lower().startswith("removerole "):
+                matches = re.findall(r'\((.*?)\)', content)
+                if len(matches) >= 2:
+                    try:
+                        mem = message.guild.get_member(int(matches[0]))
+                        rol = message.guild.get_role(int(matches[1]))
+                        if mem and rol:
+                            await mem.remove_roles(rol)
+                            await message.add_reaction("✅")
+                        else: await message.add_reaction("❌")
+                    except: await message.add_reaction("⚠️")
 
         await self.process_commands(message)
 
 bot = MyBot()
 
-# --- AOP COMMANDS ---
+# --- SLASH AOP COMMANDS ---
 
 @bot.tree.command(name="aopnfhphnrnp", description="Update AOP to NF, HPH 402, and NRNP")
 @app_commands.checks.has_role(STAFF_ROLE_ID)
@@ -250,7 +257,7 @@ async def aopmw(interaction):
     await channel.send(embed=embed)
     await interaction.followup.send("AOP Updated!")
 
-# --- SSU COMMANDS ---
+# --- SLASH SSU COMMANDS ---
 
 @bot.tree.command(name="ssupoll", description="Start SSU & AOP Poll")
 @app_commands.checks.has_role(STAFF_ROLE_ID)
