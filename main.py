@@ -29,7 +29,6 @@ def load_msg_id():
     return None
 
 async def cleanup_aop(channel):
-    """Deletes the previous Area of Play message to keep the channel clean."""
     async for message in channel.history(limit=10):
         if message.author.id == bot.user.id and message.embeds:
             desc = str(message.embeds[0].description).lower()
@@ -111,7 +110,7 @@ class SessionVoteView(discord.ui.View):
         if any(role.id == STAFF_ROLE_ID for role in interaction.user.roles) or interaction.user.guild_permissions.administrator:
             await interaction.message.delete()
         else:
-            await interaction.response.send_message("loser :rof", ephemeral=True)
+            await interaction.response.send_message("loser 🤣😂", ephemeral=True)
 
 class MyBot(commands.Bot):
     def __init__(self):
@@ -125,7 +124,7 @@ class MyBot(commands.Bot):
         @self.tree.error
         async def on_app_command_error(interaction, error):
             if isinstance(error, app_commands.errors.MissingRole) or isinstance(error, app_commands.errors.MissingPermissions):
-                await interaction.response.send_message("loser :rof", ephemeral=True)
+                await interaction.response.send_message("loser 🤣😂", ephemeral=True)
             else: raise error
         await self.tree.sync()
 
@@ -158,12 +157,12 @@ class MyBot(commands.Bot):
                             await message.add_reaction("✅")
                     except: pass
                 else:
-                    await message.channel.send("loser :rof", delete_after=3)
+                    await message.channel.send("loser 🤣😂", delete_after=3)
         await self.process_commands(message)
 
 bot = MyBot()
 
-# --- AOP COMMANDS (RESTORING FULL DESCRIPTIONS) ---
+# --- AOP COMMANDS ---
 
 @bot.tree.command(name="aopnfhphnrnp", description="Update AOP to NF, HPH 402, and NRNP")
 @app_commands.checks.has_role(STAFF_ROLE_ID)
@@ -220,7 +219,7 @@ async def aopmw(interaction):
     await channel.send(embed=embed)
     await interaction.followup.send("AOP Updated!")
 
-# --- SSU COMMANDS (RESTORING FULL DESCRIPTIONS) ---
+# --- SSU COMMANDS ---
 
 @bot.tree.command(name="ssupoll", description="Start SSU & AOP Poll")
 @app_commands.checks.has_role(STAFF_ROLE_ID)
