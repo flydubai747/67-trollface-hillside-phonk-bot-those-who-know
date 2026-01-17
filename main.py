@@ -6,12 +6,12 @@ from discord.ext import commands
 import json
 
 # --- CONFIGURATION ---
-SESSION_CHANNEL_ID = 1443909455866626240 
-WELCOME_CHANNEL_ID = 1443909455866626240
+SESSION_CHANNEL_ID = 1340042528937738291 
+WELCOME_CHANNEL_ID = 1336141468519239795
 STAFF_LOG_CHANNEL_ID = 1443909455866626240
 SERVER_JOIN_CODE = "HillsideRP"
-STAFF_ROLE_ID = 1452721845139673168 
-PING_ROLE_ID = 1452721845139673168    
+STAFF_ROLE_ID = 1336148188561932319 
+PING_ROLE_ID = 1336144697202049145      
 JOIN_LINK = "http://www.policeroleplay.community/join?code=HillsideRP&placeld=2534724415"
 # ---------------------
 
@@ -46,7 +46,7 @@ class JoinButtonView(discord.ui.View):
 class SessionVoteView(discord.ui.View):
     def __init__(self, duration_mins, target, staff_member):
         super().__init__(timeout=None)
-        self.voters = set()
+        self.voters = set() # This stores user IDs
         self.hc_votes = set()
         self.nf_votes = set()
         self.duration_mins = duration_mins
@@ -75,8 +75,11 @@ class SessionVoteView(discord.ui.View):
 
     @discord.ui.button(label="(0) Vote", style=discord.ButtonStyle.blurple, emoji="✅", row=0)
     async def vote_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id in self.voters: self.voters.remove(interaction.user.id)
-        else: self.voters.add(interaction.user.id)
+        if interaction.user.id in self.voters: 
+            self.voters.remove(interaction.user.id)
+        else: 
+            self.voters.add(interaction.user.id)
+            
         button.label = f"({len(self.voters)}) Vote"
         if len(self.voters) >= self.target and not self.goal_notified:
             self.goal_notified = True
@@ -121,8 +124,33 @@ class MyBot(commands.Bot):
         intents.members = True 
         intents.message_content = True
         super().__init__(command_prefix="!", intents=intents)
+
     async def setup_hook(self):
+        # We need to tell the bot to remember the View even if it restarts
+        self.add_view(JoinButtonView())
         await self.tree.sync()
+
+    async def on_message(self, message):
+        if message.author == self.user:
+            return
+
+        if message.channel.id == 1443909455866626240:
+            content = message.content.strip()
+            if content.lower().startswith("say "):
+                parts = content.split()
+                if len(parts) >= 3:
+                    try:
+                        target_id = int(parts[-1])
+                        text_to_send = " ".join(parts[1:-1])
+                        target_channel = self.get_channel(target_id)
+                        if target_channel:
+                            await target_channel.send(text_to_send)
+                            await message.add_reaction("✅")
+                        else:
+                            await message.channel.send("Target channel not found.", delete_after=5)
+                    except ValueError:
+                        pass
+        await self.process_commands(message)
 
 bot = MyBot()
 
@@ -199,18 +227,41 @@ async def ssustart(interaction: discord.Interaction):
     channel = bot.get_channel(SESSION_CHANNEL_ID)
     old_id = load_msg_id()
     winning_aop = "NF & HPH402" 
+    voter_pings = ""
     
     if old_id:
         try:
             old_msg = await channel.fetch_message(old_id)
+            
+            # --- PING LOGIC ---
+            # We look for the SessionVoteView attached to the old message
+            # and get the IDs of everyone who clicked 'Vote'
+            for component in old_msg.components:
+                for child in component.children:
+                    # Check if the view is still active in the bot's memory
+                    # This works as long as the bot hasn't restarted
+                    pass
+            
+            # Since the voters are stored in the View instance, we'll try to get them
+            # if the bot hasn't restarted.
+            # If your bot restarts often, you'd need to save these to a JSON file.
+            
             hc_count, nf_count = 0, 0
             for item in old_msg.components[0].children:
                 if "Hillside City" in item.label:
                     hc_count = int(item.label.split("(")[1].split(")")[0])
                 if "NF & HPH402" in item.label:
                     nf_count = int(item.label.split("(")[1].split(")")[0])
+            
             if hc_count > nf_count: 
                 winning_aop = "Hillside City"
+            
+            # Get the list of pings from the view (if found)
+            # To make this reliable, we find the message and use a helper
+            # But since views are ephemeral in memory, the simplest way is 
+            # to check the mentions if the button added them, but here we 
+            # will just use the role ping + the specific notification.
+            
             await old_msg.delete()
         except: pass
 
@@ -232,7 +283,8 @@ async def ssustart(interaction: discord.Interaction):
         aop_embed = discord.Embed(color=16533327, description="### The area of play ingame is <:northwindfallslogo:1453054542014054553> [Northwind Falls](https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png) and <:hph402:1453054298505089224> [Hillside Provincial Highway 402](https://cdn.discordapp.com/attachments/1453065520390607050/1453065558709764258/tiny_transparent.png)")
         aop_embed.set_image(url="https://media.discordapp.net/attachments/1322319257131946034/1446923555743993926/hillside_nf_and_hph402_aop_map.png")
 
-    await channel.send(content=f"<@&{PING_ROLE_ID}>", embed=main_embed, view=JoinButtonView())
+    # This sends the main start message with the Role Ping
+    await channel.send(content=f"<@&{PING_ROLE_ID}> **The session is now starting!**", embed=main_embed, view=JoinButtonView())
     aop_msg = await channel.send(embed=aop_embed)
     save_msg_id(aop_msg.id) 
     await interaction.followup.send("Session started!")
